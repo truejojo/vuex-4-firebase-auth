@@ -1,10 +1,20 @@
 <script setup>
-import Navbar from './components/Navbar.vue'
+import TheHeader from "./components/TheHeader.vue";
+import TheFooter from "./components/TheFooter.vue";
 </script>
 
 <template>
-  <div class="container">
-    <Navbar />
-    <router-view/>
-  </div>
+  <TheHeader />
+    <main class="container my-5">
+      <RouterView />
+    </main>
+  <TheFooter />
 </template>
+
+<style>
+#app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+</style>

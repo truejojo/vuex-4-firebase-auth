@@ -1,73 +1,131 @@
+import { onMounted } from "vue";
 import { createStore } from "vuex";
-import { auth } from "../firebase/config";
+import { auth, db } from "../firebase/config";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from "firebase/auth";
+import { collection, onSnapshot } from "firebase/firestore";
+import router from "../router";
+
+const collectionRef = collection(db, "destinations");
 
 const store = createStore({
   // state of the app
   state: {
     user: null,
     authIsReady: false,
+    destinations: [],
   },
   // changes for state
   mutations: {
-    setUser(state, payload) {
+    SET_USER(state, payload) {
       state.user = payload;
-      console.log(`user state changed: ${state.user}`);
     },
-    setAuthIsReady(state, payload) {
-      state.authIsReady = payload
-    }
+    CLEAR_USER(state) {
+      state.user = null;
+    },
+    SET_AUTH_IS_READY(state, payload) {
+      state.authIsReady = payload;
+    },
+    SET_DESTINATIONS(state, payload) {
+      state.destinations = payload;
+    },
   },
   // business logic and async func fetch data...
   actions: {
-    async signup(context, { email, password }) {
-      console.log(`signup action`);
-      const res = await createUserWithEmailAndPassword(auth, email, password);
-      if (res) {
-        context.commit("setUser", res.user);
-      } else {
-        throw new Error("could not complete signup");
+    async signup({ commit }, { email, password }) {
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        commit("SET_USER", auth.currentUser);
+        router.push({ name: "Destinations" });
+      } catch (error) {
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            alert("Email already in use");
+            break;
+          case "auth/invalid-email":
+            alert("Invalid email");
+            break;
+          case "auth/operation-not-allowed":
+            alert("Operation not allowed");
+            break;
+          case "auth/weak-password":
+            alert("Weak password");
+            break;
+          default:
+            alert("Something went wrong");
+        }
+        return;
       }
+      // throw new Error("could not complete signup");
     },
 
-    async login(context, { email, password }) {
-      console.log(`login action`);
-      const res = await signInWithEmailAndPassword(auth, email, password);
-      if (res) {
-        context.commit("setUser", res.user);
-      } else {
-        throw new Error("could not complete login");
+    async login({ commit }, { email, password }) {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        commit("SET_USER", auth.currentUser);
+        router.push({ name: "Destinations" });
+      } catch (error) {
+        switch (error.code) {
+          case "auth/user-not-found":
+            alert("User not found");
+            break;
+          case "auth/wrong-password":
+            alert("Wrong password");
+            break;
+          default:
+            alert("Something went wrong");
+        }
+        return;
       }
+      // throw new Error("could not complete login");
     },
 
-    async logout(context) {
-      console.log('logout action');
-      await signOut(auth)
-      context.commit('setUser', null)
-    }
+    async logout({ commit }) {
+      await signOut(auth);
+      commit("CLEAR_USER");
+      router.push({ name: "Home" });
+    },
+
+    // async getDestinations({ commit }) {},
+    // onMounted(() => {
+    //   onSnapshot(collectionRef, (querySnapshot) => {
+    //     const destinations = [];
+    //     querySnapshot.forEach((doc) => {
+    //       const destination = {
+    //         id: doc.id,
+    //         ...doc.data(),
+    //       };
+    //       destinations.push(destination);
+    //     });
+    //     commit("SET_DESTINATIONS", destinations);
+    //   });
+    // }),
+    fetchAllDestinations({ commit }) {
+      onMounted(() => {
+        onSnapshot(collectionRef, (querySnapshot) => {
+          const destinations = [];
+          querySnapshot.forEach((doc) => {
+            const destination = {
+              id: doc.id,
+              ...doc.data(),
+            };
+            destinations.push(destination);
+          });
+          commit("SET_DESTINATIONS", destinations);
+        });
+      });
+    },
   },
 });
 
-const unsub = onAuthStateChanged( auth, (user) => {
-  store.commit('setAuthIsReady', true)
-  store.commit('setUser', user)
-  unsub()
-})
+const unsub = onAuthStateChanged(auth, (user) => {
+  store.commit("SET_AUTH_IS_READY", true);
+  store.commit("SET_USER", user);
+  unsub();
+});
 
 export default store;
-
-/*
-  state: {
-    points: 0
-  },
-  mutations: {
-    updatePoints(state, payload) {
-      state.points = state.points + payload
-    }
-  }
-*/

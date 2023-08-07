@@ -1,9 +1,8 @@
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import { useStore } from "vuex";
+import Signup from "./Signup.vue";
 
-const router = useRouter();
 const store = useStore();
 
 const email = ref("");
@@ -16,7 +15,6 @@ const handleSubmit = async () => {
       email: email.value,
       password: password.value,
     });
-    router.push("/");
   } catch (err) {
     error.value = err.message;
   }
@@ -24,16 +22,44 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <form @submit.prevent="handleSubmit">
-    <h3>Login</h3>
+  <form @submit.prevent="handleSubmit" class="row">
+    <h1 class="mb-5">Login</h1>
 
-    <label for="email">Email:</label>
-    <input type="email" name="email" v-model="email" required />
+    <div class="mb-3 col-md-8">
+      <label for="email" class="form-label">Email address</label>
+      <input
+        type="email"
+        name="email"
+        class="form-control"
+        id="email"
+        aria-describedby="emailHelp"
+        v-model="email"
+        required
+      />
+      <p id="emailHelp" class="form-text">
+        We'll never share your email with anyone else.
+      </p>
+    </div>
 
-    <label for="email">Password:</label>
-    <input type="password" name="password" v-model="password" required />
+    <div class="mb-3 col-md-8">
+      <label for="password" class="form-label">Password</label>
+      <input
+        type="password"
+        name="password"
+        class="form-control"
+        id="password"
+        v-model="password"
+        required
+      />
+    </div>
 
-    <button>Login</button>
+    <p class="form-text">
+      You have't an account?
+      <RouterLink to="/signup">go here to signup</RouterLink>
+    </p>
+    <div class="col-12">
+      <button class="btn btn-primary">Submit</button>
+    </div>
     <p v-if="error">{{ error }}</p>
   </form>
 </template>
